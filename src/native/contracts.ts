@@ -33,7 +33,10 @@ export interface CursorRecordingSample extends CursorTelemetryPoint {
 	assetId?: string | null;
 	visible?: boolean;
 	cursorType?: NativeCursorType | null;
-	interactionType?: "move" | "click" | "mouseup";
+	/** The full interaction contract the sidecar may carry; matches the renderer's
+	 * CursorTelemetryPoint. The old narrow override ("move" | "click" | "mouseup")
+	 * legitimized coercing every other click kind to "move" at parse time. */
+	interactionType?: "move" | "click" | "double-click" | "right-click" | "middle-click" | "mouseup";
 }
 
 export interface NativeCursorAsset {
@@ -381,6 +384,7 @@ export interface StylePresetRevealResult {
 }
 
 export type NativeBridgeErrorCode =
+	| "CANCELLED"
 	| "INVALID_REQUEST"
 	| "UNSUPPORTED_ACTION"
 	| "NOT_FOUND"
@@ -797,11 +801,18 @@ export type NativeBridgeRequest =
 			 *  l'encodeur. La scène porte fond / layout / webcam / curseur, donc
 			 *  il n'y a aucune entrée spécifique au GIF. */
 			payload: {
+				exportId?: string;
 				clips: CompositorClipInput[];
 				outPath?: string;
 				sceneJson?: string;
 				params?: CompositorExportGifParams;
 			};
+			requestId?: string;
+	  }
+	| {
+			domain: "compositor";
+			action: "cancelGifExport";
+			payload: { exportId: string };
 			requestId?: string;
 	  }
 	| {
